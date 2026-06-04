@@ -1,0 +1,39 @@
+name: atlas-erp-hml
+
+services:
+  api:
+    image: ${ATLAS_API_IMAGE}
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_URLS: http://+:8080
+      Atlas__ApplyMigrationsOnStartup: "false"
+      Authentication__RequireHttpsMetadata: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1536M
+    restart: unless-stopped
+
+  web:
+    image: ${ATLAS_WEB_IMAGE}
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:17
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+    volumes:
+      - postgres-hml-data:/var/lib/postgresql/data
+      - postgres-wal-archive:/wal-archive
+    restart: unless-stopped
+
+volumes:
+  postgres-hml-data:
+  postgres-wal-archive:

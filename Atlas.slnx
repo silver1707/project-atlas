@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Atlas.Api/Atlas.Api.csproj" />
+  <Project Path="tests/Atlas.Api.Tests/Atlas.Api.Tests.csproj" />
+</Solution>
