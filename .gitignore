@@ -5,6 +5,7 @@ obj/
 .vscode/
 node_modules/
 dist/
+target/
 coverage/
 TestResults/
 playwright-report/
@@ -16,4 +17,5 @@ playwright-report/
 *.nupkg
 *.log
 *.trx
+*.tsbuildinfo
 tmp/

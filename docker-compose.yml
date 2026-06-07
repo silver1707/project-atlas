@@ -1,17 +1,17 @@
-name: atlas-erp
+name: autoparts-erp-local
 
 services:
   postgres:
     image: postgres:17
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-atlas}
-      POSTGRES_USER: ${POSTGRES_USER:-atlas}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-autoparts_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-autoparts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autoparts_dev_password}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+      - ./database/migrations:/docker-entrypoint-initdb.d:ro
     command:
       - postgres
       - -c
@@ -28,8 +28,32 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: src/backend/AutoPartsErp.Api/Dockerfile
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-autoparts_erp};Username=${POSTGRES_USER:-autoparts};Password=${POSTGRES_PASSWORD:-autoparts_dev_password}
+      LocalAuthentication__SigningKey: ${LOCAL_AUTH_SIGNING_KEY:-development-only-change-this-local-erp-signing-key-64-bytes}
+      Atlas__InstallationProfile: development
+      Atlas__ApplyMigrationsOnStartup: "false"
+      Atlas__EnableRedis: "false"
+      Atlas__EnableRabbitMq: "false"
+      Atlas__EnableOpenTelemetry: "false"
+      Atlas__ImmutableXmlStoragePath: /var/lib/autoparts-erp/fiscal-xml
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:8080"
+    volumes:
+      - fiscal-xml:/var/lib/autoparts-erp/fiscal-xml
+
   redis:
     image: redis:7.4-alpine
+    profiles: ["advanced"]
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -43,9 +67,10 @@ services:
 
   rabbitmq:
     image: rabbitmq:4-management
+    profiles: ["advanced"]
     environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-atlas}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-atlas_dev_password}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-autoparts}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-autoparts_dev_password}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -57,19 +82,9 @@ services:
       timeout: 5s
       retries: 10
 
-  keycloak:
-    image: quay.io/keycloak/keycloak:26.2
-    command: ["start-dev", "--http-port=8080"]
-    environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
-    ports:
-      - "8080:8080"
-    volumes:
-      - keycloak-data:/opt/keycloak/data
-
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.126.0
+    profiles: ["advanced"]
     command: ["--config=/etc/otelcol/config.yml"]
     volumes:
       - ./deploy/otel-collector.yml:/etc/otelcol/config.yml:ro
@@ -80,6 +95,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
+    profiles: ["advanced"]
     volumes:
       - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
@@ -87,57 +103,15 @@ services:
 
   grafana:
     image: grafana/grafana:11.2.2
+    profiles: ["advanced"]
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
 
-  api:
-    build:
-      context: .
-      dockerfile: src/Atlas.Api/Dockerfile
-    environment:
-      ASPNETCORE_URLS: http://+:8080
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=${POSTGRES_DB:-atlas};Username=${POSTGRES_USER:-atlas};Password=${POSTGRES_PASSWORD:-atlas_dev_password}
-      ConnectionStrings__Redis: redis:6379
-      Authentication__Authority: http://keycloak:8080/realms/atlas
-      Authentication__RequireHttpsMetadata: "false"
-      RabbitMq__Host: rabbitmq
-      RabbitMq__Username: ${RABBITMQ_DEFAULT_USER:-atlas}
-      RabbitMq__Password: ${RABBITMQ_DEFAULT_PASS:-atlas_dev_password}
-      OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
-    ports:
-      - "5000:8080"
-    volumes:
-      - fiscal-xml:/var/lib/atlas/fiscal-xml
-
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    environment:
-      VITE_API_BASE_URL: http://localhost:5000
-      VITE_OIDC_AUTHORITY: http://localhost:8080/realms/atlas
-      VITE_OIDC_CLIENT_ID: atlas-web
-    depends_on:
-      - api
-    ports:
-      - "5173:80"
-
 volumes:
   postgres-data:
   redis-data:
   rabbitmq-data:
-  keycloak-data:
   grafana-data:
   fiscal-xml:

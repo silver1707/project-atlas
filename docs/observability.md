@@ -3,11 +3,10 @@
 ## Componentes
 
 - Serilog para logs estruturados.
-- OpenTelemetry para traces e metricas.
-- OTLP Collector.
-- Prometheus para coleta.
-- Grafana para dashboards.
-- Health checks da API.
+- Health checks da API local.
+- Correlation/trace id por request.
+- OpenTelemetry, Prometheus e Grafana opcionais no perfil avancado.
+- Logs locais acessiveis ao administrador da loja.
 
 ## Health Checks
 
@@ -16,7 +15,7 @@ GET /health/live
 GET /health/ready
 ```
 
-`live` indica processo vivo. `ready` deve ser usado pelo orquestrador para receber trafego.
+`live` indica processo vivo. `ready` indica que a API consegue operar, incluindo dependencias essenciais como PostgreSQL.
 
 ## Logs
 
@@ -28,6 +27,7 @@ Campos esperados:
 - usuario;
 - empresa;
 - filial;
+- IP/terminal;
 - rota;
 - status;
 - duracao;
@@ -45,36 +45,29 @@ Campos esperados:
 - reservas de estoque negadas;
 - titulos vencidos;
 - uso de CPU/memoria;
+- disco livre para banco/XML/backup;
 - conexoes PostgreSQL;
-- filas RabbitMQ.
+- filas RabbitMQ quando habilitado.
 
 ## Alertas Minimos
 
 - API indisponivel.
 - Ready check falhando por mais de 5 minutos.
+- Banco indisponivel.
+- Pasta fiscal sem escrita.
+- Backup local falhando.
 - Outbox com falhas crescentes.
 - Provider fiscal com erro acima de limiar.
 - Rejeicao fiscal acima do normal.
-- Banco sem WAL archive.
-- Redis indisponivel.
-- RabbitMQ sem consumidor.
-
-## Trace
-
-Cada requisicao HTTP deve propagar trace para:
-
-- consultas HTTP externas;
-- provider fiscal;
-- outbox;
-- jobs.
+- Redis/RabbitMQ indisponivel quando habilitados.
 
 ## Dashboards
 
 Dashboards recomendados:
 
-- Operacao do ERP.
+- Operacao da loja.
 - Fiscal.
-- Mensageria.
+- Mensageria opcional.
 - Banco.
-- Frontend/PWA.
+- Desktop/terminais.
 - Seguranca e autenticacao.

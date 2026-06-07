@@ -1,20 +1,21 @@
 # Runbooks
 
-## API Indisponivel
+## API Local Indisponivel
 
 Sintomas:
 
 - `/health/live` falha.
-- frontend mostra erro de conexao.
+- desktop mostra erro de conexao.
 
 Acoes:
 
-1. Verificar logs da API.
-2. Verificar PostgreSQL.
-3. Verificar variaveis de ambiente.
-4. Reiniciar pod/container se necessario.
-5. Conferir readiness.
-6. Registrar incidente.
+1. Verificar se o servico/processo da API esta ativo.
+2. Verificar logs da API.
+3. Verificar PostgreSQL.
+4. Verificar variaveis de ambiente.
+5. Verificar firewall/porta em terminais.
+6. Reiniciar servico se necessario.
+7. Registrar incidente.
 
 ## Banco Indisponivel
 
@@ -26,12 +27,22 @@ Sintomas:
 
 Acoes:
 
-1. Verificar conexoes.
+1. Verificar servico PostgreSQL.
 2. Verificar disco.
-3. Verificar locks longos.
-4. Verificar WAL.
-5. Acionar DBA.
-6. Se perda de dados, iniciar procedimento PITR.
+3. Verificar conexoes e locks longos.
+4. Verificar WAL/backup em perfil avancado.
+5. Se perda de dados, iniciar restore.
+
+## Terminal Cliente Nao Conecta
+
+Acoes:
+
+1. Confirmar IP/hostname do servidor da loja.
+2. Testar `http://<servidor>:5000/health/ready`.
+3. Verificar firewall no servidor.
+4. Verificar se API escuta no endereco correto.
+5. Conferir rede LAN/VPN.
+6. Atualizar URL do servidor no desktop.
 
 ## Outbox Parado
 
@@ -39,12 +50,12 @@ Sintomas:
 
 - mensagens sem `ProcessedAt`;
 - `Attempts` aumentando;
-- RabbitMQ com fila crescendo.
+- fila RabbitMQ crescendo quando habilitado.
 
 Acoes:
 
-1. Verificar RabbitMQ.
-2. Verificar logs `OutboxDispatcher`.
+1. Verificar logs `OutboxDispatcher`.
+2. Em perfil avancado, verificar RabbitMQ.
 3. Conferir credenciais.
 4. Conferir contrato do evento que falhou.
 5. Corrigir causa.
@@ -66,7 +77,7 @@ Acoes:
 5. Corrigir dados.
 6. Reemitir ou inutilizar conforme caso fiscal.
 
-## Provider Fiscal Indisponivel
+## Provider Fiscal ou Internet Indisponivel
 
 Acoes:
 
@@ -95,22 +106,21 @@ Acoes:
 
 Acoes:
 
-1. Verificar Keycloak.
-2. Verificar realm `atlas`.
-3. Verificar client `atlas-web`.
-4. Verificar roles.
-5. Verificar claim `mfa`.
-6. Revisar policy na API.
+1. Verificar usuario em `identity.local_users`.
+2. Verificar lockout por tentativas.
+3. Verificar roles e permissoes.
+4. Verificar configuracao de MFA.
+5. Revisar policy na API.
+6. Auditar `identity.authentication_logs`.
 
-## Restore PITR
+## Backup/Restore Local
 
 Acoes resumidas:
 
 1. Isolar ambiente.
-2. Escolher base backup.
-3. Escolher ponto de recuperacao.
-4. Executar `scripts/restore-pitr.sh`.
-5. Iniciar PostgreSQL.
+2. Escolher backup.
+3. Parar API se necessario.
+4. Executar `scripts/restore-local.ps1`.
+5. Iniciar PostgreSQL/API.
 6. Validar consistencia.
-7. Apontar aplicacao.
-8. Registrar RTO/RPO real.
+7. Registrar RTO/RPO real.

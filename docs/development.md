@@ -8,6 +8,7 @@
 - Usar `Guid.CreateVersion7()` para novos ids em dominio.
 - Usar strings para identificadores fiscais/tecnicos.
 - JSONB apenas para snapshots, payloads externos e dados flexiveis justificados.
+- Manter a UI como desktop local, sem retomar dependencias de PWA.
 
 ## Novo Endpoint
 
@@ -39,16 +40,29 @@
 ## Novo Provider Fiscal
 
 1. Implementar `IFiscalDocumentProvider`.
-2. Configurar secrets.
-3. Registrar DI.
+2. Configurar secrets/certificado fora do codigo.
+3. Registrar DI/adapters.
 4. Adicionar contratos de teste.
 5. Homologar em ambiente oficial.
 6. Documentar rejeicoes e contingencias.
 
-## Frontend
+## Desktop
 
 - Usar componentes existentes.
 - Manter UI operacional e densa.
-- Garantir responsividade.
+- Garantir responsividade interna da janela.
+- Nao gravar dados oficiais no cliente.
+- Usar API local por `localhost` ou LAN.
 - Rodar lint/build.
-- Validar com Playwright quando mexer em layout.
+- Validar com Playwright e, quando possivel, Tauri em runner Windows.
+
+## Estrutura de Branch/PR
+
+Mudancas devem informar:
+
+- modulo afetado;
+- migration nova;
+- impacto em instalacao local;
+- impacto fiscal/financeiro;
+- testes executados;
+- limitacoes.

@@ -2,7 +2,7 @@
 
 ## Papeis
 
-- Administrador: configura empresas, filiais, perfis, parametros e adapters.
+- Administrador: configura empresas, filiais, perfis, parametros locais e adapters.
 - Vendedor de balcao: busca produtos, monta venda, consulta estoque e fecha pedido.
 - Estoquista: recebe, transfere, reserva, confere e separa mercadorias.
 - Comprador: cadastra fornecedor, emite pedido e usa compra sugerida.
@@ -12,7 +12,7 @@
 
 ## Padrao de Operacao
 
-Cada operacao usa contexto de empresa e filial. No frontend local, esse contexto vem de variaveis `VITE_COMPANY_ID` e `VITE_BRANCH_ID`. Na API, o contexto vem dos headers `X-Company-Id`, `X-Branch-Id` ou claims OIDC.
+Cada operacao usa contexto de empresa e filial. No desktop, esse contexto vem da sessao local e das escolhas do usuario. Na API, o contexto vem das claims do JWT local e dos headers `X-Company-Id`/`X-Branch-Id` quando necessario.
 
 ## Catalogo
 
@@ -34,18 +34,21 @@ Resultado esperado:
 - aplicacoes;
 - equivalentes;
 - preco sugerido;
-- codigos tecnicos.
+- codigos tecnicos;
+- saldo por local.
 
 ## Vendas
 
 Venda de balcao:
 
 1. Buscar produto.
-2. Adicionar ao carrinho.
-3. Validar local com estoque disponivel.
-4. Fechar venda.
-5. Sistema cria pedido e reservas.
-6. Pedido fica pronto para emissao fiscal.
+2. Conferir aplicacao no veiculo.
+3. Conferir saldo.
+4. Adicionar ao carrinho.
+5. Validar desconto/autorizacao.
+6. Fechar venda.
+7. Sistema cria pedido, reservas e financeiro.
+8. Pedido fica pronto para fiscal.
 
 Se alguma reserva falhar, a transacao e revertida.
 
@@ -81,7 +84,7 @@ Fluxos:
 - manifestar destinatario;
 - importar XML de entrada.
 
-XMLs sao armazenados por hash e tratados como imutaveis.
+XMLs sao armazenados por hash em pasta local/compartilhada e tratados como imutaveis.
 
 ## Financeiro
 
@@ -92,6 +95,18 @@ Fluxos:
 - registrar lancamento de caixa;
 - conciliar extrato;
 - acompanhar dashboard de vencidos e abertos.
+
+## Servicos Locais
+
+Administrador acompanha no desktop:
+
+- API local;
+- PostgreSQL;
+- caminho fiscal;
+- fila/outbox;
+- backup;
+- versao instalada;
+- logs locais.
 
 ## Auditoria
 

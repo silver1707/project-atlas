@@ -2,60 +2,57 @@
 
 ## Requisitos
 
-- Windows, Linux ou macOS.
-- Docker Desktop ou Docker Engine.
-- .NET SDK 10.
-- Node.js 24.
+- Windows 10/11 para desktop e instalador.
+- .NET SDK 10 para desenvolvimento backend.
+- Node.js 24 para o renderer React.
+- Rust toolchain para `tauri build`.
+- Docker Desktop para Postgres de desenvolvimento e homologacao.
 - Git.
 
-## Subir Tudo com Docker
+## Subir Ambiente de Desenvolvimento
 
-```bash
-docker compose up --build
+```powershell
+Copy-Item .env.example .env
+.\scripts\dev-local.ps1
 ```
 
-Servicos:
+Esse script sobe `postgres` e `api` via Docker Compose e abre o app Tauri em modo desenvolvimento.
 
-- `postgres`: banco principal.
-- `redis`: cache distribuido.
-- `rabbitmq`: mensageria.
-- `keycloak`: provedor OIDC local.
-- `api`: backend.
-- `web`: frontend PWA.
-- `otel-collector`, `prometheus`, `grafana`: observabilidade.
+Para perfil avancado:
+
+```powershell
+.\scripts\dev-local.ps1 -Advanced
+```
 
 ## Rodar Backend Fora do Docker
 
-```bash
-dotnet restore Atlas.slnx
-dotnet run --project src/Atlas.Api/Atlas.Api.csproj
-```
-
-Configure variaveis:
-
-```bash
-ConnectionStrings__Postgres="Host=localhost;Port=5432;Database=atlas;Username=atlas;Password=atlas_dev_password"
-ConnectionStrings__Redis="localhost:6379"
-RabbitMq__Host="localhost"
-Authentication__Authority="http://localhost:8080/realms/atlas"
-```
-
-## Rodar Frontend Fora do Docker
-
-```bash
-cd web
-npm ci
-npm run dev
+```powershell
+dotnet restore AutoPartsErp.slnx
+dotnet run --project src\backend\AutoPartsErp.Api\AutoPartsErp.Api.csproj
 ```
 
 Variaveis comuns:
 
-```bash
-VITE_API_BASE_URL=http://localhost:5000
-VITE_OIDC_AUTHORITY=http://localhost:8080/realms/atlas
-VITE_OIDC_CLIENT_ID=atlas-web
-VITE_COMPANY_ID=11111111-1111-1111-1111-111111111111
-VITE_BRANCH_ID=22222222-2222-2222-2222-222222222222
+```powershell
+$env:ConnectionStrings__Postgres="Host=localhost;Port=5432;Database=autoparts_erp;Username=autoparts;Password=autoparts_dev_password"
+$env:Atlas__InstallationProfile="development"
+$env:Atlas__EnableRedis="false"
+$env:Atlas__EnableRabbitMq="false"
+$env:LocalAuthentication__SigningKey="development-only-change-this-local-erp-signing-key-64-bytes"
+```
+
+## Rodar Desktop
+
+```powershell
+Set-Location src\desktop\AutoPartsErp.Desktop
+npm ci
+npm run desktop:dev
+```
+
+Renderer isolado, util para depurar UI:
+
+```powershell
+npm run dev
 ```
 
 ## Dados de Homologacao
@@ -64,20 +61,27 @@ As migrations SQL criam:
 
 - empresa e filial padrao;
 - permissoes iniciais;
-- produtos reais de exemplo: pastilha, disco de freio e filtro;
+- usuario local `admin`;
+- produtos reais de exemplo;
 - aplicacoes por veiculo;
 - equivalentes/OE;
 - fornecedor;
 - locais de estoque;
 - saldos;
-- regras fiscais de homologacao.
+- regras fiscais sandbox.
+
+Credencial:
+
+- Usuario: `admin`
+- Senha: `Admin@123456`
 
 ## Primeiros Testes Manuais
 
-1. Abrir `http://localhost:5173`.
-2. Entrar via Keycloak configurado.
-3. Buscar produto por `NKF1234`, `04465-0K290`, `Corolla` ou `7890000001234`.
-4. Conferir estoque em `Estoque`.
-5. Fazer venda de balcao.
-6. Emitir documento fiscal em sandbox.
-7. Verificar Swagger em `http://localhost:5000/swagger`.
+1. Abrir o aplicativo desktop.
+2. Conferir o painel de status da API local.
+3. Entrar com `admin` e `Admin@123456`.
+4. Buscar produto por `NKF1234`, `04465-0K290`, `Corolla` ou `7890000001234`.
+5. Conferir saldo em estoque.
+6. Fazer venda de balcao.
+7. Emitir documento fiscal no provider sandbox.
+8. Verificar Swagger em `http://localhost:5000/swagger`.

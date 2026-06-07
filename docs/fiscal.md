@@ -27,6 +27,17 @@ Antes de homologacao fiscal real, revisar as versoes vigentes novamente.
 - Providers assinam, autorizam, consultam, cancelam, inutilizam, distribuem e manifestam.
 - Dominio nao depende de SEFAZ direta, prefeitura, NFS-e Nacional ou provedor privado.
 
+## Operacao Local
+
+No produto desktop local, o fiscal deve operar mesmo com oscilacao de internet, respeitando limites legais e tecnicos de cada documento:
+
+- XMLs, eventos e protocolos ficam em pasta local/compartilhada protegida.
+- Certificado A1/A3 e senha ficam fora do codigo, com acesso restrito.
+- Emissao, consulta, cancelamento, inutilizacao, contingencia e reprocessamento entram em fila local/outbox.
+- Falha de internet deve registrar tentativa, payload, erro, usuario, empresa, filial e horario.
+- Reprocessamento deve ser idempotente por chave/documento/evento.
+- DANFE/DANFCE/DANFSE devem ser gerados para visualizacao/impressao a partir do desktop, sem acoplar dominio a driver local.
+
 ## Escopo
 
 Contratos preparados para:

@@ -2,18 +2,16 @@
 
 ## Status
 
-Aceito
+Superseded por [0006: Autenticacao Local por Padrao](0006-local-authentication-default.md)
 
 ## Contexto
 
-ERP fiscal/financeiro exige MFA, SSO, auditoria e segregacao de funcoes.
+A versao anterior do produto foi desenhada como webapp, com OIDC/OAuth2 e Keycloak no ambiente local/homologacao.
 
-## Decisao
+## Decisao Original
 
 Usar OIDC/OAuth2 com provider compativel, Keycloak no ambiente local/homologacao e RBAC local por modulo/filial.
 
-## Consequencias
+## Motivo da Substituicao
 
-- MFA e politicas de senha ficam no IdP.
-- API valida JWT e claims.
-- Permissoes operacionais continuam no dominio administrativo.
+O produto agora e desktop-first e local-first. Exigir Keycloak para uma loja pequena aumenta complexidade de instalacao, suporte e operacao. OIDC continua relevante para clientes maiores, mas como provider externo opcional.

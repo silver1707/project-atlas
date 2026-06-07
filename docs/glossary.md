@@ -27,13 +27,20 @@
 - IBS: Imposto sobre Bens e Servicos.
 - CBS: Contribuicao sobre Bens e Servicos.
 
+## Desktop Local
+
+- Tauri: runtime para empacotar interface web em aplicativo desktop nativo.
+- Servidor de loja: maquina que roda API local e PostgreSQL.
+- Terminal cliente: maquina que roda apenas o desktop e acessa a API pela LAN.
+- Local-first: operacao principal nao depende de nuvem.
+- LAN: rede local da loja.
+
 ## Tecnico
 
 - Bounded context: fronteira de dominio com linguagem e dados proprios.
 - Modular monolith: aplicacao unica com modulos internos bem separados.
-- Outbox: tabela transacional de eventos a publicar.
+- Outbox: tabela transacional de eventos a publicar/processar.
 - RLS: Row-Level Security do PostgreSQL.
-- PWA: Progressive Web App instalavel.
-- OIDC: OpenID Connect.
 - MFA: autenticacao multifator.
 - RBAC: controle de acesso baseado em papeis.
+- OIDC: OpenID Connect, mantido como extensao opcional futura.

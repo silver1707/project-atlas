@@ -2,13 +2,21 @@
 
 ## Escopo
 
-Empresas, filiais, perfis, permissoes, MFA e contexto operacional.
+Empresas, filiais, usuarios locais, perfis, permissoes, MFA, sessoes e contexto operacional.
 
-## Identidade
+## Identidade Local
 
-O sistema usa OIDC/OAuth2. O ambiente local usa Keycloak.
+O sistema usa autenticacao local por padrao:
 
-Claims esperadas:
+- usuario e senha;
+- hash forte com salt;
+- JWT local;
+- refresh token armazenado por hash;
+- lockout por tentativas;
+- log de autenticacao;
+- RBAC por modulo/empresa/filial.
+
+Claims esperadas no token:
 
 - `sub`;
 - `preferred_username`;
@@ -17,22 +25,27 @@ Claims esperadas:
 - `branch_id`;
 - `mfa`.
 
-Se claims de empresa/filial nao existirem, a API aceita headers:
+Se claims de empresa/filial nao existirem em chamadas internas controladas, a API aceita headers:
 
 - `X-Company-Id`;
 - `X-Branch-Id`.
 
 ## Policies
 
-- `admin:tenant`: administracao, requer MFA.
-- `sensitive:fiscal`: fiscal, requer MFA.
-- `sensitive:finance`: financeiro, requer MFA.
+- `admin:tenant`: administracao, requer MFA quando configurado.
+- `sensitive:fiscal`: fiscal, requer MFA quando configurado.
+- `sensitive:finance`: financeiro, requer MFA quando configurado.
 
 ## Administracao
 
 Endpoints:
 
 ```http
+GET /api/auth/bootstrap/status
+POST /api/auth/bootstrap/admin
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
 GET /api/admin/companies
 POST /api/admin/companies
 POST /api/admin/branches
@@ -53,7 +66,9 @@ Permissoes ficam em `identity.module_permissions` por:
 
 ## Homologacao
 
-- usuario sem MFA nao acessa fiscal/financeiro/admin;
-- usuario com role correta acessa modulo;
+- usuario sem role nao acessa modulo;
+- usuario sensivel exige MFA quando configurado;
 - filial A nao enxerga dados da filial B;
-- auditoria registra usuario e IP.
+- auditoria registra usuario e IP;
+- logout revoga refresh token;
+- lockout ocorre apos tentativas invalidas.

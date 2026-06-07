@@ -1,26 +1,29 @@
-name: atlas-erp-hml
+name: autoparts-erp-store-hml
 
 services:
   api:
-    image: ${ATLAS_API_IMAGE}
+    image: ${AUTOPARTS_API_IMAGE:-autoparts-erp-api:local}
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       ASPNETCORE_URLS: http://+:8080
+      Atlas__InstallationProfile: store-server
       Atlas__ApplyMigrationsOnStartup: "false"
-      Authentication__RequireHttpsMetadata: "true"
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 1536M
-    restart: unless-stopped
-
-  web:
-    image: ${ATLAS_WEB_IMAGE}
+      Atlas__EnableRedis: ${ENABLE_REDIS:-false}
+      Atlas__EnableRabbitMq: ${ENABLE_RABBITMQ:-false}
+      Atlas__EnableOpenTelemetry: ${ENABLE_OTEL:-false}
+      Atlas__ImmutableXmlStoragePath: /var/lib/autoparts-erp/fiscal-xml
+    ports:
+      - "5000:8080"
+    volumes:
+      - fiscal-xml-hml:/var/lib/autoparts-erp/fiscal-xml
     restart: unless-stopped
 
   postgres:
     image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-autoparts_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-autoparts}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
     command:
       - postgres
       - -c
@@ -29,6 +32,8 @@ services:
       - archive_mode=on
       - -c
       - archive_command=test ! -f /wal-archive/%f && cp %p /wal-archive/%f
+    ports:
+      - "5432:5432"
     volumes:
       - postgres-hml-data:/var/lib/postgresql/data
       - postgres-wal-archive:/wal-archive
@@ -37,3 +42,4 @@ services:
 volumes:
   postgres-hml-data:
   postgres-wal-archive:
+  fiscal-xml-hml:

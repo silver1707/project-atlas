@@ -3,8 +3,8 @@ set -euo pipefail
 
 : "${PGHOST:=postgres}"
 : "${PGPORT:=5432}"
-: "${PGDATABASE:=atlas}"
-: "${PGUSER:=atlas}"
+: "${PGDATABASE:=autoparts_erp}"
+: "${PGUSER:=autoparts}"
 : "${BACKUP_DIR:=./backups/base}"
 
 mkdir -p "${BACKUP_DIR}"

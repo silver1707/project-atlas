@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <id>AutoPartsErpApi</id>
+  <name>AutoParts ERP API Local</name>
+  <description>Servico local do ERP de autopecas para terminais da loja.</description>
+  <executable>C:\AutoPartsErp\Api\AutoPartsErp.Api.exe</executable>
+  <workingdirectory>C:\AutoPartsErp\Api</workingdirectory>
+  <logpath>C:\AutoPartsErp\Logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10485760</sizeThreshold>
+    <keepFiles>10</keepFiles>
+  </log>
+  <env name="ASPNETCORE_ENVIRONMENT" value="Production" />
+  <env name="ASPNETCORE_URLS" value="http://0.0.0.0:5000" />
+</service>

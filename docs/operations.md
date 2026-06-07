@@ -1,29 +1,31 @@
-# Operacao
+# Operacao Local
 
 ## Rotina Diaria
 
 Equipe operacional deve acompanhar:
 
-- health checks da API;
-- filas RabbitMQ;
+- status do servico da API local;
+- conexao com PostgreSQL;
 - outbox pendente/falha;
+- filas RabbitMQ quando habilitado;
 - rejeicoes fiscais;
 - documentos em contingencia;
+- internet e provider fiscal;
 - estoque abaixo do minimo;
 - vendas pendentes de fiscal;
 - caixa aberto;
 - titulos vencidos;
-- backups e WAL archive.
+- backups locais e WAL archive quando configurado.
 
 ## Abertura do Dia
 
-1. Verificar `/health/ready`.
-2. Verificar login OIDC.
-3. Conferir dashboard operacional.
-4. Conferir provider fiscal em homologacao/producao.
-5. Conferir RabbitMQ.
-6. Conferir se WAL archive esta ativo.
-7. Conferir erros da noite.
+1. Abrir o app desktop no servidor.
+2. Verificar painel de status dos servicos locais.
+3. Verificar `/health/ready`.
+4. Conferir provider fiscal ou internet, quando houver emissao no dia.
+5. Conferir erros da noite.
+6. Conferir ultimo backup.
+7. Abrir caixa.
 
 ## Fechamento do Dia
 
@@ -31,7 +33,7 @@ Equipe operacional deve acompanhar:
 2. Conferir documentos fiscais pendentes/rejeitados.
 3. Conferir outbox sem falha.
 4. Conferir conciliacao financeira.
-5. Conferir backup agendado.
+5. Executar ou validar backup.
 6. Exportar relatorios exigidos internamente.
 
 ## Monitoramento Fiscal
@@ -44,7 +46,8 @@ Alertas:
 - NSU parado;
 - manifestacao falhando;
 - XML nao armazenado;
-- provider indisponivel.
+- provider indisponivel;
+- pasta fiscal sem permissao de escrita.
 
 ## Monitoramento de Estoque
 
@@ -72,6 +75,7 @@ Logs devem ser consultados por:
 
 - trace id;
 - usuario;
+- IP/terminal;
 - rota;
 - empresa;
 - filial;
@@ -79,20 +83,10 @@ Logs devem ser consultados por:
 - pedido;
 - produto.
 
-## Manutencao de Particoes
+## Manutencao
 
-Criar particoes futuras antes da virada de ano para:
-
-- auditoria;
-- movimentos de estoque;
-- documentos fiscais.
-
-## Retencao
-
-Definir politica por area:
-
-- XML fiscal conforme obrigacao legal;
-- auditoria conforme compliance;
-- logs de aplicacao conforme seguranca;
-- backups conforme RPO/RTO;
-- eventos de outbox processados conforme volume.
+- criar particoes futuras antes da virada de ano para auditoria, movimentos e documentos fiscais;
+- testar restore mensalmente;
+- revisar espaco em disco para banco, XML e backups;
+- revisar certificados digitais antes do vencimento;
+- arquivar XML e logs conforme politica legal/contratual.

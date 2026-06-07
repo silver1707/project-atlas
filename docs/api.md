@@ -2,11 +2,12 @@
 
 ## Padroes
 
-- Base local: `http://localhost:5000`.
+- Base servidor local: `http://localhost:5000`.
+- Base terminal cliente: `http://<ip-do-servidor>:5000`.
 - Swagger: `/swagger`.
 - Health: `/health/live` e `/health/ready`.
-- Autenticacao: Bearer JWT OIDC.
-- Tenant: headers `X-Company-Id` e `X-Branch-Id` quando claims nao existirem.
+- Autenticacao: Bearer JWT local.
+- Tenant: claims do token e headers `X-Company-Id`/`X-Branch-Id` para contexto operacional.
 - Erros: `application/problem+json` com `traceId`.
 
 ## Headers
@@ -16,6 +17,16 @@ Authorization: Bearer <token>
 X-Company-Id: 11111111-1111-1111-1111-111111111111
 X-Branch-Id: 22222222-2222-2222-2222-222222222222
 Content-Type: application/json
+```
+
+## Autenticacao Local
+
+```http
+GET /api/auth/bootstrap/status
+POST /api/auth/bootstrap/admin
+POST /api/auth/login
+POST /api/auth/refresh
+POST /api/auth/logout
 ```
 
 ## Administracao

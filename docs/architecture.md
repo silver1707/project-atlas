@@ -2,117 +2,69 @@
 
 ## Visao Geral
 
-Atlas ERP e um modular monolith com fronteiras explicitas por bounded context. O deploy inicial e unico, mas cada modulo tem schema, namespace, endpoints e contratos proprios. Essa escolha privilegia consistencia transacional no core e deixa o sistema pronto para futura extracao de servicos.
+AutoParts ERP Desktop e um modular monolith local-first. A interface roda como aplicativo Windows com Tauri, reaproveitando React/TypeScript. A API ASP.NET Core continua separada e roda como processo/servico local no servidor da loja ou em uma maquina de rede. PostgreSQL e a fonte primaria de verdade. Redis, RabbitMQ e observabilidade completa entram por perfil avancado, sem serem obrigatorios para uma instalacao pequena.
 
 ```mermaid
 flowchart LR
-  Web["React PWA"] --> Api["ASP.NET Core API"]
-  Api --> Auth["Keycloak/OIDC"]
-  Api --> Pg["PostgreSQL"]
-  Api --> Redis["Redis"]
-  Api --> Rabbit["RabbitMQ"]
-  Api --> FiscalProvider["Fiscal Providers"]
-  Api --> CatalogProvider["Catalog Adapters"]
-  Pg --> Outbox["Outbox"]
-  Outbox --> Rabbit
-  Api --> OTel["OpenTelemetry Collector"]
-  OTel --> Prom["Prometheus/Grafana"]
+  Desktop["App Windows Tauri + React"] -->|HTTP localhost/LAN| Api["ASP.NET Core API local"]
+  Terminal["Terminal cliente Windows"] -->|HTTP LAN| Api
+  Api --> Pg["PostgreSQL local/servidor LAN"]
+  Api --> Xml["XML/DANFE local imutavel"]
+  Api --> Jobs["Jobs internos"]
+  Api -. opcional .-> Redis["Redis"]
+  Api -. opcional .-> Rabbit["RabbitMQ"]
+  Api --> FiscalProvider["Providers fiscais"]
+  Api --> CatalogProvider["Adapters de catalogo"]
+  Pg --> Outbox["Outbox transacional"]
+  Outbox --> Jobs
+  Outbox -. perfil avancado .-> Rabbit
+  Api -. perfil avancado .-> OTel["OpenTelemetry + Prometheus/Grafana"]
 ```
+
+## Perfis de Execucao
+
+| Perfil | Componentes | Uso |
+| --- | --- | --- |
+| Simples | Desktop, API local, PostgreSQL, jobs internos | loja pequena ou servidor unico |
+| Avancado | Desktop, API local/LAN, PostgreSQL, Redis, RabbitMQ, workers/observabilidade | rede com maior volume e integracoes |
+| Desenvolvimento/Homologacao | Docker Compose, Postgres, Redis/Rabbit opcionais, API, desktop dev | testes tecnicos e homologacao |
 
 ## Camadas
 
+- `src/desktop/AutoPartsErp.Desktop`: shell desktop, UI ERP, login local, status de servicos, consumo da API local.
+- `src/backend/AutoPartsErp.Api`: composicao da API, Minimal APIs, Swagger, auth local, health checks.
 - `Common`: entidades base, tenant, eventos, policies.
-- `Infrastructure`: EF Core, outbox, migrations, interceptor de tenant.
+- `Infrastructure`: EF Core, migrations, outbox, auditoria e sessao PostgreSQL.
 - Modulos: administracao, identidade, catalogo, compras, estoque, vendas, fiscal, financeiro, CRM, relatorios e integracoes.
-- `Program.cs`: composicao, DI, auth, swagger, observabilidade e middlewares.
+- `database/migrations`: schema relacional, RLS, indices, particoes iniciais e seeds.
+- `deploy/local`: exemplos para servidor Windows, firewall e servico local.
 
 ## Bounded Contexts
 
 | Contexto | Schema | Responsabilidade |
 | --- | --- | --- |
-| Administracao | `administration` | empresas, filiais e parametros globais |
-| Identidade | `identity` | perfis, roles e permissoes |
-| Catalogo | `catalog` | produto tecnico e compatibilidade |
-| Compras | `purchasing` | fornecedores e pedidos |
-| Estoque | `inventory` | saldos, reservas, movimentos e picking |
-| Vendas | `sales` | orcamento, pedido, balcao e caixa |
-| Fiscal | `fiscal` | regras, DF-e, XML e eventos |
-| Financeiro | `finance` | pagar, receber, caixa e conciliacao |
-| CRM | `crm` | clientes e interacoes |
-| Integracoes | `integrations` | adapters e outbox |
-| Auditoria | `audit` | before/after de alteracoes |
+| Administracao | `administration` | empresas, filiais, parametros locais e setup |
+| Identidade | `identity` | usuarios locais, roles, permissoes, sessoes e logs de auth |
+| Catalogo | `catalog` | produto tecnico, OE, equivalentes, kits e compatibilidade |
+| Compras | `purchasing` | fornecedores, pedidos, recebimento e XML de entrada |
+| Estoque | `inventory` | saldos, reservas, movimentos, picking e transferencias |
+| Vendas | `sales` | orcamento, pedido, balcao, devolucao, caixa e comissao |
+| Fiscal | `fiscal` | regras, documentos, XML, eventos, protocolos e providers |
+| Financeiro | `finance` | pagar, receber, caixa, conciliacao e centros de custo |
+| CRM | `crm` | clientes, frota e historico |
+| Integracoes | `integrations` | adapters, outbox e jobs |
+| Auditoria | `audit` | before/after de alteracoes criticas |
 
-## DDD
+## DDD, CQRS e Eventos
 
-Agregados com regra de negocio:
+DDD e aplicado nos agregados com regra real: produto tecnico, pedido de compra, movimento de estoque, venda, documento fiscal e titulos financeiros. CQRS e usado pragmaticamente: comandos alteram agregados por services de aplicacao; queries retornam DTOs de leitura para busca de balcao, dashboards e relatorios operacionais.
 
-- `AutoPartProduct`: normalizacao, aplicacoes, equivalentes e historico de preco.
-- `PurchaseOrder`: status e aprovacao.
-- `StockMovement`: movimento auditavel.
-- `SalesOrder`: snapshots, recalculo, aprovacao, devolucao e garantia.
-- `FiscalDocument`: ciclo fiscal, protocolos, XML e eventos.
-- `AccountPayable` e `AccountReceivable`: titulos financeiros.
+`SaveChangesAsync` coleta auditoria, domain events e mensagens de outbox na mesma transacao. Em perfil simples, `LocalOutboxPublisher` marca o evento processado e permite jobs internos. Em perfil avancado, `RabbitMqOutboxPublisher` publica o envelope no RabbitMQ.
 
-Eventos de dominio:
+## Local Desktop
 
-- `ProductCreated`;
-- `ProductCompatibilityChanged`;
-- `ProductPriceChanged`;
-- `PurchaseOrderCreated`;
-- `PurchaseOrderApproved`;
-- `StockMoved`;
-- `SalesOrderCreated`;
-- `SalesOrderApproved`;
-- `SalesReturnRegistered`;
-- `FiscalDocumentCreated`;
-- `FiscalDocumentAuthorizationChanged`.
+O desktop nunca e fonte oficial de dados. Ele guarda apenas sessao segura e preferencias locais. Dados oficiais ficam na API/PostgreSQL. A URL do servidor pode apontar para `localhost` no modo servidor local ou para IP/hostname da loja no modo terminal cliente.
 
-## CQRS
+## Fronteiras para Futuro
 
-O sistema usa CQRS de forma pragmatica:
-
-- comandos alteram agregados por servicos de aplicacao;
-- leituras retornam DTOs especificos;
-- dashboards usam queries de leitura isoladas;
-- busca de catalogo tem servico proprio.
-
-Nao ha mediador global. O objetivo e manter simplicidade e separar leitura/escrita onde ha ganho real.
-
-## Outbox
-
-`AtlasDbContext.SaveChangesAsync`:
-
-1. aplica tenant, usuario e timestamps;
-2. coleta auditoria;
-3. coleta domain events;
-4. cria mensagens em `integrations.outbox_messages`;
-5. salva tudo na mesma transacao.
-
-`OutboxDispatcher` publica no RabbitMQ com retries.
-
-## Tenant e RLS
-
-`TenantSessionInterceptor` configura variaveis de sessao PostgreSQL:
-
-- `atlas.company_id`;
-- `atlas.branch_id`;
-- `atlas.user_id`.
-
-As policies de RLS usam essas variaveis para isolar dados por empresa. Consultas tambem filtram por tenant no EF para defesa em profundidade.
-
-## Fronteiras para Extracao Futura
-
-Modulos candidatos a servicos:
-
-- Fiscal: alto acoplamento externo e carga assincrona.
-- Integracoes: adapters de catalogo e webhooks.
-- Relatorios: leitura analitica por replica/logical replication.
-- Estoque: se houver alto volume de WMS.
-
-Ao extrair, preservar:
-
-- contratos de API;
-- eventos de integracao;
-- ownership de schema;
-- ids como UUID/string;
-- outbox ou inbox por servico.
+Os modulos fiscal, integracoes, relatorios e estoque continuam com fronteiras que permitem extracao futura. Essa extracao nao e obrigatoria para o produto local, mas contratos de API, eventos e schemas ja evitam acoplamento direto entre contexts.

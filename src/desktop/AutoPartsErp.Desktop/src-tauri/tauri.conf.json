@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AutoParts ERP",
+  "version": "0.1.0",
+  "identifier": "br.com.autopartserp.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev:renderer",
+    "devUrl": "http://127.0.0.1:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AutoParts ERP",
+        "width": 1360,
+        "height": 860,
+        "minWidth": 1100,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "category": "Business",
+    "shortDescription": "ERP local para lojas de autopecas",
+    "longDescription": "ERP desktop local para autopecas, distribuidores automotivos e pecas de caminhao.",
+    "windows": {
+      "nsis": {
+        "displayLanguageSelector": true
+      }
+    }
+  }
+}
